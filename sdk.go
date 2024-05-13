@@ -1,32 +1,62 @@
-package main
+package scrimmage
 
-import "strings"
+import (
+	"context"
+	"net/http"
+	"strings"
+	"time"
+)
 
-type ScrimmageRewarderService interface {
-}
-
-type scrimmageRewarderServiceImpl struct {
+type ScrimmageRewarder struct {
 	config *rewarderConfig
+	logger *loggerService
+	Status StatusService
 }
 
-func InitScrimmageRewarderService(
+func InitRewarder(
+	ctx context.Context,
 	apiServerEndpoint string,
 	privateKey string,
 	namespace string,
 	options ...RewarderOptionFnc,
-) (ScrimmageRewarderService, error) {
+) (*ScrimmageRewarder, error) {
+	sdk := &ScrimmageRewarder{}
+
+	if err := sdk.setConfig(apiServerEndpoint, privateKey, namespace, options...); err != nil {
+		return nil, err
+	}
+
+	apiClient := newAPI(sdk.config)
+	sdk.Status = newStatusService(apiClient, sdk.config)
+
+	sdk.Status.Verify(ctx)
+
+	sdk.logger = newLoggerService(sdk.config)
+	sdk.logger.Info("Rewarder Initiated")
+
+	return sdk, nil
+}
+
+func (s *ScrimmageRewarder) setConfig(
+	apiServerEndpoint string,
+	privateKey string,
+	namespace string,
+	options ...RewarderOptionFnc,
+) error {
 	config := &rewarderConfig{
 		apiServerEndpoint: apiServerEndpoint,
 		privateKeys: map[string]string{
 			"default": privateKey,
 		},
-		serviceMap: map[ServiceType]string{
-			ServiceType_API: "api",
-			ServiceType_P2E: "p2e",
-			ServiceType_FED: "fed",
-			ServiceType_NBC: "nbc",
-		},
+		services:  []ServiceType{ServiceType_API, ServiceType_P2E, ServiceType_FED, ServiceType_NBC},
 		namespace: namespace,
+		httpClient: &http.Client{
+			Timeout: time.Duration(30 * time.Second),
+		},
+		logLevel:                  LogLevel_Debug,
+		logger:                    newDefaultLogger(),
+		secure:                    true,
+		validateAPIServerEndpoint: true,
 	}
 
 	for _, runableOption := range options {
@@ -34,12 +64,11 @@ func InitScrimmageRewarderService(
 	}
 
 	if isUrlHasValidProtocol := validateURLProtocol(config.apiServerEndpoint, config.secure); !isUrlHasValidProtocol {
-		return nil, ErrInvalidURLProtocol
+		return ErrInvalidURLProtocol
 	}
 
 	config.apiServerEndpoint, _ = strings.CutSuffix(config.apiServerEndpoint, "/")
+	s.config = config
 
-	return &scrimmageRewarderServiceImpl{
-		config: config,
-	}, nil
+	return nil
 }
