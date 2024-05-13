@@ -1,4 +1,4 @@
-package main
+package scrimmage
 
 type ServiceType string
 

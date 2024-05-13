@@ -1,21 +1,48 @@
-package main
+package scrimmage
 
-import "context"
+import "github.com/sirupsen/logrus"
 
 type LogLevel int
 
 const (
-	LogLevel_Log   LogLevel = iota + 1
 	LogLevel_Debug LogLevel = iota + 1
-	LogLevel_Warn  LogLevel = iota + 1
-	LogLevel_Info  LogLevel = iota + 1
-	LogLevel_Error LogLevel = iota + 1
+	LogLevel_Info
+	LogLevel_Log
+	LogLevel_Warn
+	LogLevel_Error
 )
 
 type Logger interface {
-	Log(ctx context.Context, args ...interface{})
-	Warn(ctx context.Context, args ...interface{})
-	Debug(ctx context.Context, args ...interface{})
-	Info(ctx context.Context, args ...interface{})
-	Error(ctx context.Context, args ...interface{})
+	Log(args ...interface{})
+	Warn(args ...interface{})
+	Debug(args ...interface{})
+	Info(args ...interface{})
+	Error(args ...interface{})
+}
+
+type defaultLogger struct {
+}
+
+func newDefaultLogger() Logger {
+	return &defaultLogger{}
+}
+
+func (d *defaultLogger) Log(args ...interface{}) {
+	logrus.Info(args...)
+}
+
+func (d *defaultLogger) Warn(args ...interface{}) {
+	logrus.Warn(args...)
+}
+
+func (d *defaultLogger) Debug(args ...interface{}) {
+	logrus.Debug(args...)
+}
+
+func (d *defaultLogger) Info(args ...interface{}) {
+	logrus.Info(args...)
+}
+
+func (d *defaultLogger) Error(args ...interface{}) {
+	logrus.Error(args...)
 }
