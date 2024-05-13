@@ -71,5 +71,5 @@ func (s *statusServiceImpl) getOverallServiceStatus(ctx context.Context) bool {
 		}
 	}
 
-	return isAnyServiceDown
+	return !isAnyServiceDown
 }
