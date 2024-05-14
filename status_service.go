@@ -52,12 +52,11 @@ func (s *statusServiceImpl) getOverallServiceStatus(ctx context.Context) bool {
 				serviceType: serviceType,
 			}
 
+			result.ok = true
 			if err := s.api.GetServiceStatus(ctx, serviceType); err != nil {
 				result.ok = false
 				result.err = err
 			}
-
-			result.ok = true
 
 			ch <- result
 		}(ctx, ch, service)
