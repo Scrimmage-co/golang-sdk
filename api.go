@@ -1,7 +1,9 @@
 package scrimmage
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 )
@@ -9,11 +11,17 @@ import (
 const (
 	SERVICE_STATUS_PATH      = "system/status"
 	REWARDER_KEY_DETAIL_PATH = "rewarders/keys/@me"
+	GET_USER_TOKEN_PATH      = "integrations/users"
 )
 
 type API interface {
 	GetServiceStatus(ctx context.Context, serviceName ServiceType) error
 	GetRewarderKeyDetails(ctx context.Context) error
+	GetUserToken(ctx context.Context, payload GetUserTokenRequest) (string, error)
+}
+
+type GetUserTokenResponse struct {
+	Token string `json:"token"`
 }
 
 type apiImpl struct {
@@ -57,4 +65,35 @@ func (a *apiImpl) GetRewarderKeyDetails(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (a *apiImpl) GetUserToken(ctx context.Context, payload GetUserTokenRequest) (string, error) {
+	finalUrl := fmt.Sprintf("%s/%s/%s", a.config.apiServerEndpoint, ServiceType_API, GET_USER_TOKEN_PATH)
+
+	reqBody, err := json.Marshal(payload)
+	if err != nil {
+		return "", err
+	}
+
+	req, err := http.NewRequest("POST", finalUrl, bytes.NewReader(reqBody))
+	if err != nil {
+		return "", err
+	}
+
+	req.Header.Set("Authorization", "Token "+a.config.privateKeys["default"])
+	req.Header.Set("Scrimmage-Namespace", a.config.namespace)
+
+	res, err := a.config.httpClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+
+	defer res.Body.Close()
+
+	var responseBody GetUserTokenResponse
+	if err := json.NewDecoder(res.Body).Decode(&responseBody); err != nil {
+		return "", err
+	}
+
+	return responseBody.Token, nil
 }
