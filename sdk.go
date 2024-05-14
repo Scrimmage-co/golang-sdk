@@ -10,7 +10,9 @@ import (
 type ScrimmageRewarder struct {
 	config *rewarderConfig
 	logger *loggerService
-	Status StatusService
+	status StatusService
+
+	User UserService
 }
 
 func InitRewarder(
@@ -27,9 +29,11 @@ func InitRewarder(
 	}
 
 	apiClient := newAPI(sdk.config)
-	sdk.Status = newStatusService(apiClient, sdk.config)
 
-	sdk.Status.Verify(ctx)
+	sdk.status = newStatusService(apiClient, sdk.config)
+	sdk.status.Verify(ctx)
+
+	sdk.User = newUserServiceImpl(sdk.config, apiClient)
 
 	sdk.logger = newLoggerService(sdk.config)
 	sdk.logger.Info("Rewarder Initiated")
