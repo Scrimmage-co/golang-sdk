@@ -3,7 +3,6 @@ package scrimmage
 import (
 	"context"
 	"net/http"
-	"strings"
 	"time"
 )
 
@@ -73,7 +72,7 @@ func (s *ScrimmageRewarder) setConfig(
 		return ErrInvalidURLProtocol
 	}
 
-	config.apiServerEndpoint, _ = strings.CutSuffix(config.apiServerEndpoint, "/")
+	config.apiServerEndpoint = CutSuffix(config.apiServerEndpoint, "/")
 	s.config = config
 
 	return nil
