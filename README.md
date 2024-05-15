@@ -19,6 +19,8 @@ $ go get github.com/Scrimmage-co/golang-sdk
 
 ## Usage
 
+To get started, have a look at our [example](https://github.com/Scrimmage-co/golang-sdk/blob/main/examples/basic/main.go) or follow the instructions below : 
+
 ### 1. Initialize the SDK:
 To initialize the library, provide your unique server endpoint and secret key. Obtain the `API_SERVER_ENDPOINT` from your admin dashboard URL, which should resemble "your_company_name.apps.scrimmage.co". The secret key is generated during [Step 2 of Getting Started.](https://docs.scrimmage.co/docs/getting-started#2-create-secret-key)
 
@@ -92,6 +94,7 @@ result, err := sdk.Reward.TrackRewardableOnce(
 ```
 
 Please insert this code wherever your bets (events) are executed. Once this code is inserted, it will open up a one-way connection for you to send bet details to Scrimmage.
+
 
 
 ## License
