@@ -14,3 +14,10 @@ func validateURLProtocol(url string, secure bool) bool {
 func GetPtrOf[T any](input T) *T {
 	return &input
 }
+
+func CutSuffix(s, suffix string) string {
+	if strings.HasSuffix(s, suffix) {
+		return s[:len(s)-len(suffix)]
+	}
+	return s
+}
