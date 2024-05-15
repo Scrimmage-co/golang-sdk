@@ -12,7 +12,8 @@ type ScrimmageRewarder struct {
 	logger *loggerService
 	status StatusService
 
-	User UserService
+	User   UserService
+	Reward RewardService
 }
 
 func InitRewarder(
@@ -34,6 +35,7 @@ func InitRewarder(
 	sdk.status.Verify(ctx)
 
 	sdk.User = newUserServiceImpl(sdk.config, apiClient)
+	sdk.Reward = newRewardService(sdk.config, apiClient)
 
 	sdk.logger = newLoggerService(sdk.config)
 	sdk.logger.Info("Rewarder Initiated")
