@@ -117,6 +117,10 @@ func (a *apiImpl) CreateIntegrationReward(ctx context.Context, payload CreateInt
 		return CreateIntegrationRewardResponse{}, err
 	}
 
+	if res.StatusCode == http.StatusNotFound {
+		return CreateIntegrationRewardResponse{}, ErrAccountIsNotLinked
+	}
+
 	defer res.Body.Close()
 
 	var responseBody CreateIntegrationRewardResponse
