@@ -9,19 +9,17 @@ import (
 )
 
 const (
-	SERVICE_STATUS_PATH      = "system/status"
-	REWARDER_KEY_DETAIL_PATH = "rewarders/keys/@me"
-	GET_USER_TOKEN_PATH      = "integrations/users"
+	SERVICE_STATUS_PATH            = "system/status"
+	REWARDER_KEY_DETAIL_PATH       = "rewarders/keys/@me"
+	GET_USER_TOKEN_PATH            = "integrations/users"
+	CREATE_INTEGRATION_REWARD_PATH = "integrations/rewards"
 )
 
 type API interface {
 	GetServiceStatus(ctx context.Context, serviceName ServiceType) error
 	GetRewarderKeyDetails(ctx context.Context) error
 	GetUserToken(ctx context.Context, payload GetUserTokenRequest) (string, error)
-}
-
-type GetUserTokenResponse struct {
-	Token string `json:"token"`
+	CreateIntegrationReward(ctx context.Context, payload CreateIntegrationRewardRequest) (CreateIntegrationRewardResponse, error)
 }
 
 type apiImpl struct {
@@ -96,4 +94,35 @@ func (a *apiImpl) GetUserToken(ctx context.Context, payload GetUserTokenRequest)
 	}
 
 	return responseBody.Token, nil
+}
+
+func (a *apiImpl) CreateIntegrationReward(ctx context.Context, payload CreateIntegrationRewardRequest) (CreateIntegrationRewardResponse, error) {
+	finalUrl := fmt.Sprintf("%s/%s/%s", a.config.apiServerEndpoint, ServiceType_API, CREATE_INTEGRATION_REWARD_PATH)
+
+	reqBody, err := json.Marshal(payload)
+	if err != nil {
+		return CreateIntegrationRewardResponse{}, err
+	}
+
+	req, err := http.NewRequest("POST", finalUrl, bytes.NewReader(reqBody))
+	if err != nil {
+		return CreateIntegrationRewardResponse{}, err
+	}
+
+	req.Header.Set("Authorization", "Token "+a.config.privateKeys["default"])
+	req.Header.Set("Scrimmage-Namespace", a.config.namespace)
+
+	res, err := a.config.httpClient.Do(req)
+	if err != nil {
+		return CreateIntegrationRewardResponse{}, err
+	}
+
+	defer res.Body.Close()
+
+	var responseBody CreateIntegrationRewardResponse
+	if err := json.NewDecoder(res.Body).Decode(&responseBody); err != nil {
+		return CreateIntegrationRewardResponse{}, err
+	}
+
+	return responseBody, nil
 }

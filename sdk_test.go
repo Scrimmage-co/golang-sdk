@@ -2,8 +2,11 @@ package scrimmage_test
 
 import (
 	"context"
+	"encoding/json"
+	"io"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	scrimmage "github.com/Scrimmage-co/golang-sdk"
 	"github.com/gin-gonic/gin"
@@ -24,13 +27,8 @@ func Test_SDK_InitOK(t *testing.T) {
 	})
 
 	mockedScrimmageBackendHandler.GET("api/rewarders/keys/@me", func(ctx *gin.Context) {
-		isAuthHeaderValid := ctx.GetHeader("Authorization") == "Token "+privateKey
-		isNamespaceValid := ctx.GetHeader("Scrimmage-Namespace") == namespace
-
-		if !isAuthHeaderValid || !isNamespaceValid {
-			ctx.Abort()
-			return
-		}
+		assert.Equal(t, "Token "+privateKey, ctx.GetHeader("Authorization"))
+		assert.Equal(t, namespace, ctx.GetHeader("Scrimmage-Namespace"))
 
 		ctx.JSON(200, gin.H{
 			"ok": true,
@@ -108,4 +106,199 @@ func Test_SDK_GetUserTokenOK(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, userToken, userTokenResult)
+}
+
+func Test_SDK_TrackRewardableOnceOK(t *testing.T) {
+	var (
+		privateKey = "MOCK_PRIVATE_KEY"
+		namespace  = "isolated-testing"
+
+		betEvent = scrimmage.BetEvent{
+			BetType:     scrimmage.BetType_Single,
+			IsLive:      false,
+			Odds:        1.5,
+			Description: "lorem ipsum",
+			WagerAmount: 1000,
+			NetProfit:   scrimmage.GetPtrOf[float64](500),
+			Outcome:     scrimmage.GetPtrOf[scrimmage.BetOutcome]("win"),
+			BetDate:     scrimmage.BetDate(time.Now().UnixMilli()),
+			Bets: []scrimmage.SingleBet{
+				{
+					Type:           scrimmage.SingleBetType_Spread,
+					Odds:           1.5,
+					TeamBetOn:      scrimmage.GetPtrOf("team a"),
+					TeamBetAgainst: scrimmage.GetPtrOf("team b"),
+					League:         scrimmage.BetLeague("nba"),
+					Sport:          scrimmage.BetSport("basketball"),
+				},
+			},
+		}
+
+		expectedRequestBodyInJson, _ = json.Marshal(scrimmage.CreateIntegrationRewardRequest{
+			EventID:  scrimmage.GetPtrOf("uniqueEventId"),
+			UserID:   "userId",
+			DataType: scrimmage.BetDataType_BetExecuted,
+			Body:     betEvent,
+		})
+	)
+
+	mockedScrimmageBackendHandler := gin.Default()
+	mockedScrimmageBackendHandler.GET(":service/system/status", func(ctx *gin.Context) {
+		ctx.JSON(200, gin.H{
+			"ok": true,
+		})
+	})
+
+	mockedScrimmageBackendHandler.GET("api/rewarders/keys/@me", func(ctx *gin.Context) {
+		assert.Equal(t, "Token "+privateKey, ctx.GetHeader("Authorization"))
+		assert.Equal(t, namespace, ctx.GetHeader("Scrimmage-Namespace"))
+
+		ctx.JSON(200, gin.H{
+			"ok": true,
+		})
+	})
+
+	mockedScrimmageBackendHandler.POST("api/integrations/rewards", func(ctx *gin.Context) {
+		rawRequestBody, err := io.ReadAll(ctx.Request.Body)
+		assert.NoError(t, err)
+
+		assert.JSONEq(t, string(rawRequestBody), string(expectedRequestBodyInJson))
+
+		ctx.JSON(200, scrimmage.CreateIntegrationRewardResponse{
+			Namespace: namespace,
+			EventID:   scrimmage.GetPtrOf("uniqueEventId"),
+			DataType:  scrimmage.GetPtrOf[scrimmage.BetDataType](scrimmage.BetDataType_BetExecuted),
+			Body:      &betEvent,
+		})
+	})
+
+	mockedScrimmageBackendServer := httptest.NewServer(mockedScrimmageBackendHandler)
+	apiServerEndpoint := mockedScrimmageBackendServer.URL
+
+	sdk, err := scrimmage.InitRewarder(
+		context.Background(),
+		apiServerEndpoint,
+		privateKey,
+		namespace,
+		scrimmage.WithSecure(false),
+	)
+
+	assert.NoError(t, err)
+
+	_, err = sdk.Reward.TrackRewardableOnce(
+		context.Background(),
+		"userId",
+		scrimmage.BetDataType_BetExecuted,
+		scrimmage.GetPtrOf("uniqueEventId"), betEvent,
+	)
+
+	assert.NoError(t, err)
+}
+
+func Test_SDK_TrackRewardableMultipleDataOK(t *testing.T) {
+	var (
+		privateKey = "MOCK_PRIVATE_KEY"
+		namespace  = "isolated-testing"
+
+		betEvents = []scrimmage.BetEvent{
+			{
+				BetType:     scrimmage.BetType_Single,
+				IsLive:      false,
+				Odds:        1.5,
+				Description: "lorem ipsum",
+				WagerAmount: 1000,
+				NetProfit:   scrimmage.GetPtrOf[float64](500),
+				Outcome:     scrimmage.GetPtrOf[scrimmage.BetOutcome]("win"),
+				BetDate:     scrimmage.BetDate(time.Now().UnixMilli()),
+				Bets: []scrimmage.SingleBet{
+					{
+						Type:           scrimmage.SingleBetType_Spread,
+						Odds:           1.5,
+						TeamBetOn:      scrimmage.GetPtrOf("team a"),
+						TeamBetAgainst: scrimmage.GetPtrOf("team b"),
+						League:         scrimmage.BetLeague("nba"),
+						Sport:          scrimmage.BetSport("basketball"),
+					},
+				},
+			},
+			{
+				BetType:     scrimmage.BetType_Single,
+				IsLive:      false,
+				Odds:        1.5,
+				Description: "lorem ipsum",
+				WagerAmount: 1000,
+				NetProfit:   scrimmage.GetPtrOf[float64](500),
+				Outcome:     scrimmage.GetPtrOf[scrimmage.BetOutcome]("win"),
+				BetDate:     scrimmage.BetDate(time.Now().UnixMilli()),
+				Bets: []scrimmage.SingleBet{
+					{
+						Type:           scrimmage.SingleBetType_Spread,
+						Odds:           1.5,
+						TeamBetOn:      scrimmage.GetPtrOf("team a"),
+						TeamBetAgainst: scrimmage.GetPtrOf("team b"),
+						League:         scrimmage.BetLeague("nba"),
+						Sport:          scrimmage.BetSport("basketball"),
+					},
+				},
+			},
+		}
+
+		expectedRequestBodyInJson, _ = json.Marshal(scrimmage.CreateIntegrationRewardRequest{
+			UserID:   "userId",
+			DataType: scrimmage.BetDataType_BetExecuted,
+			Body:     betEvents[0],
+		})
+	)
+
+	mockedScrimmageBackendHandler := gin.Default()
+	mockedScrimmageBackendHandler.GET(":service/system/status", func(ctx *gin.Context) {
+		ctx.JSON(200, gin.H{
+			"ok": true,
+		})
+	})
+
+	mockedScrimmageBackendHandler.GET("api/rewarders/keys/@me", func(ctx *gin.Context) {
+		assert.Equal(t, "Token "+privateKey, ctx.GetHeader("Authorization"))
+		assert.Equal(t, namespace, ctx.GetHeader("Scrimmage-Namespace"))
+
+		ctx.JSON(200, gin.H{
+			"ok": true,
+		})
+	})
+
+	mockedScrimmageBackendHandler.POST("api/integrations/rewards", func(ctx *gin.Context) {
+		rawRequestBody, err := io.ReadAll(ctx.Request.Body)
+		assert.NoError(t, err)
+		assert.JSONEq(t, string(rawRequestBody), string(expectedRequestBodyInJson))
+
+		ctx.JSON(200, scrimmage.CreateIntegrationRewardResponse{
+			Namespace: namespace,
+			EventID:   scrimmage.GetPtrOf("uniqueEventId"),
+			DataType:  scrimmage.GetPtrOf[scrimmage.BetDataType](scrimmage.BetDataType_BetExecuted),
+			Body:      &betEvents[0],
+		})
+	})
+
+	mockedScrimmageBackendServer := httptest.NewServer(mockedScrimmageBackendHandler)
+	apiServerEndpoint := mockedScrimmageBackendServer.URL
+
+	sdk, err := scrimmage.InitRewarder(
+		context.Background(),
+		apiServerEndpoint,
+		privateKey,
+		namespace,
+		scrimmage.WithSecure(false),
+	)
+
+	assert.NoError(t, err)
+
+	result, err := sdk.Reward.TrackRewardable(
+		context.Background(),
+		"userId",
+		scrimmage.BetDataType_BetExecuted,
+		betEvents...,
+	)
+
+	assert.NoError(t, err)
+	assert.Len(t, result, 2)
 }
