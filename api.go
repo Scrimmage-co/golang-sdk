@@ -35,7 +35,12 @@ func newAPI(config *rewarderConfig) API {
 func (a *apiImpl) GetServiceStatus(ctx context.Context, serviceName ServiceType) error {
 	finalUrl := fmt.Sprintf("%s/%s/%s", a.config.apiServerEndpoint, serviceName, SERVICE_STATUS_PATH)
 
-	res, err := a.config.httpClient.Get(finalUrl)
+	req, err := http.NewRequest("GET", finalUrl, nil)
+	if err != nil {
+		return err
+	}
+
+	res, err := a.config.httpClient.Do(req)
 	if err != nil {
 		return err
 	}
