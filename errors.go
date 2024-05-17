@@ -5,7 +5,7 @@ import "errors"
 var (
 	ErrInvalidURLProtocol error = errors.New("service url must start with protocol")
 	ErrAccountIsNotLinked error = errors.New("selected account is not linked")
-	ErrForbidden          error = errors.New("serice token is invalid")
+	ErrForbidden          error = errors.New("service token is invalid")
 )
 
 type BadRequestError struct {
