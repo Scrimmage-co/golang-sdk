@@ -35,13 +35,24 @@ func newAPI(config *rewarderConfig) API {
 func (a *apiImpl) GetServiceStatus(ctx context.Context, serviceName ServiceType) error {
 	finalUrl := fmt.Sprintf("%s/%s/%s", a.config.apiServerEndpoint, serviceName, SERVICE_STATUS_PATH)
 
-	r, err := a.config.httpClient.Get(finalUrl)
+	res, err := a.config.httpClient.Get(finalUrl)
 	if err != nil {
 		return err
 	}
 
-	if r.StatusCode != http.StatusOK {
-		return ErrStatusCodeIsNotOK
+	defer res.Body.Close()
+
+	if res.StatusCode == http.StatusForbidden {
+		return ErrForbidden
+	}
+
+	if res.StatusCode == http.StatusBadRequest {
+		var errorResponse BadRequestError
+		if err := json.NewDecoder(res.Body).Decode(&errorResponse); err != nil {
+			return err
+		}
+
+		return &errorResponse
 	}
 
 	return nil
@@ -59,8 +70,24 @@ func (a *apiImpl) GetRewarderKeyDetails(ctx context.Context) error {
 	req.Header.Set("Scrimmage-Namespace", a.config.namespace)
 	req.Header.Set("Content-Type", "application/json")
 
-	if _, err := a.config.httpClient.Do(req); err != nil {
+	res, err := a.config.httpClient.Do(req)
+	if err != nil {
 		return err
+	}
+
+	defer res.Body.Close()
+
+	if res.StatusCode == http.StatusForbidden {
+		return ErrForbidden
+	}
+
+	if res.StatusCode == http.StatusBadRequest {
+		var errorResponse BadRequestError
+		if err := json.NewDecoder(res.Body).Decode(&errorResponse); err != nil {
+			return err
+		}
+
+		return &errorResponse
 	}
 
 	return nil
@@ -89,6 +116,19 @@ func (a *apiImpl) GetUserToken(ctx context.Context, payload GetUserTokenRequest)
 	}
 
 	defer res.Body.Close()
+
+	if res.StatusCode == http.StatusForbidden {
+		return "", ErrForbidden
+	}
+
+	if res.StatusCode == http.StatusBadRequest {
+		var errorResponse BadRequestError
+		if err := json.NewDecoder(res.Body).Decode(&errorResponse); err != nil {
+			return "", err
+		}
+
+		return "", &errorResponse
+	}
 
 	var responseBody GetUserTokenResponse
 	if err := json.NewDecoder(res.Body).Decode(&responseBody); err != nil {
@@ -120,11 +160,24 @@ func (a *apiImpl) CreateIntegrationReward(ctx context.Context, payload CreateInt
 		return CreateIntegrationRewardResponse{}, err
 	}
 
+	defer res.Body.Close()
+
 	if res.StatusCode == http.StatusNotFound {
 		return CreateIntegrationRewardResponse{}, ErrAccountIsNotLinked
 	}
 
-	defer res.Body.Close()
+	if res.StatusCode == http.StatusForbidden {
+		return CreateIntegrationRewardResponse{}, ErrForbidden
+	}
+
+	if res.StatusCode == http.StatusBadRequest {
+		var errorResponse BadRequestError
+		if err := json.NewDecoder(res.Body).Decode(&errorResponse); err != nil {
+			return CreateIntegrationRewardResponse{}, err
+		}
+
+		return CreateIntegrationRewardResponse{}, &errorResponse
+	}
 
 	var responseBody CreateIntegrationRewardResponse
 	if err := json.NewDecoder(res.Body).Decode(&responseBody); err != nil {

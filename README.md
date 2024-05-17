@@ -96,6 +96,32 @@ result, err := sdk.Reward.TrackRewardableOnce(
 Please insert this code wherever your bets (events) are executed. Once this code is inserted, it will open up a one-way connection for you to send bet details to Scrimmage.
 
 
+### Error Handling
+
+This repository contains custom error types for the Scrimmage backend API, including `BadRequestError`, `ErrAccountIsNotLinked`, `ErrForbidden`, and `ErrInvalidURLProtocol`. To handle these errors, `BadRequestError` should be checked using `errors.As`, while the other errors (`ErrAccountIsNotLinked`, `ErrForbidden`, `ErrInvalidURLProtocol`) should be checked using `errors.Is`. These error types provide structured error handling and clear error messages for various scenarios in the Scrimmage backend API.
+
+```go
+token, err := sdk.User.GetUserToken(context.Background, scrimmage. GetUserTokenRequest{
+    UserID:     "userId",
+    Tags:       ["tag-1", "tag-2"],
+    Properties: map[string]interface{
+        "at": 1718231233,
+        "device": "personal"
+    }
+})
+
+if err != nil {
+    var scrimmageErr *scrimmage.BadRequestError
+    if errors.As(err, &scrimmageErr) {
+        fmt.Println(scrimmageErr.StatusCode)
+        fmt.Println(scrimmageErr.Message)
+        fmt.Println(scrimmageErr.Error())
+    }
+}
+```
+
+
+
 
 ## License
 

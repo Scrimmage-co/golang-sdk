@@ -49,6 +49,52 @@ func Test_SDK_InitOK(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func Test_SDK_GetUserTokenForbidden(t *testing.T) {
+	var (
+		privateKey = "MOCK_PRIVATE_KEY"
+		namespace  = "isolated-testing"
+
+		userId         = "userId"
+		tags           = []string{"tag-a", "tag-b"}
+		userProperties = map[string]any{
+			"name":    "user",
+			"balance": 500000,
+		}
+	)
+
+	mockedScrimmageBackendHandler := gin.Default()
+	mockedScrimmageBackendHandler.POST("api/integrations/users", func(ctx *gin.Context) {
+		ctx.JSON(403, gin.H{
+			"message":    "Forbidden resource",
+			"error":      "Forbidden",
+			"statusCode": 403,
+		})
+	})
+
+	mockedScrimmageBackendServer := httptest.NewServer(mockedScrimmageBackendHandler)
+	apiServerEndpoint := mockedScrimmageBackendServer.URL
+
+	sdk, err := scrimmage.InitRewarder(
+		context.Background(),
+		apiServerEndpoint,
+		privateKey,
+		namespace,
+		scrimmage.WithSecure(false),
+		scrimmage.WithValidateAPIServerEndpoint(false),
+	)
+
+	assert.NoError(t, err)
+
+	_, err = sdk.User.GetUserToken(context.Background(), scrimmage.GetUserTokenRequest{
+		UserID:     userId,
+		Tags:       tags,
+		Properties: userProperties,
+	})
+
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, scrimmage.ErrForbidden)
+}
+
 func Test_SDK_GetUserTokenOK(t *testing.T) {
 	var (
 		privateKey = "MOCK_PRIVATE_KEY"
