@@ -21,3 +21,10 @@ func CutSuffix(s, suffix string) string {
 	}
 	return s
 }
+
+func CutPrefix(s, prefix string) string {
+	if strings.HasPrefix(s, prefix) {
+		return s[len(prefix):]
+	}
+	return s
+}
