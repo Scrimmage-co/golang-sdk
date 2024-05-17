@@ -1,9 +1,11 @@
 package scrimmage
 
-import "context"
+import (
+	"context"
+)
 
 type GetUserTokenRequest struct {
-	UserID     string         `json:"userId"`
+	UserID     string         `json:"id"`
 	Tags       []string       `json:"tags"`
 	Properties map[string]any `json:"properties"`
 }
