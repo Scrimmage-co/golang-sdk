@@ -1,7 +1,5 @@
 package scrimmage
 
-import "net/http"
-
 type ServiceType string
 
 const (
@@ -20,5 +18,5 @@ type rewarderConfig struct {
 	logger                    Logger
 	secure                    bool
 	validateAPIServerEndpoint bool
-	httpClient                *http.Client
+	httpClient                *RetryClient
 }

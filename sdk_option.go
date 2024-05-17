@@ -1,7 +1,5 @@
 package scrimmage
 
-import "net/http"
-
 type RewarderOptionFnc func(config *rewarderConfig) *rewarderConfig
 
 func WithLogLevel(logLevel LogLevel) RewarderOptionFnc {
@@ -28,13 +26,6 @@ func WithSecure(secure bool) RewarderOptionFnc {
 func WithValidateAPIServerEndpoint(isValidate bool) RewarderOptionFnc {
 	return func(config *rewarderConfig) *rewarderConfig {
 		config.validateAPIServerEndpoint = isValidate
-		return config
-	}
-}
-
-func WithHTTPClient(client *http.Client) RewarderOptionFnc {
-	return func(config *rewarderConfig) *rewarderConfig {
-		config.httpClient = client
 		return config
 	}
 }

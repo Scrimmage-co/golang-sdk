@@ -55,8 +55,13 @@ func (s *ScrimmageRewarder) setConfig(
 		},
 		services:  []ServiceType{ServiceType_API, ServiceType_P2E, ServiceType_FED, ServiceType_NBC},
 		namespace: namespace,
-		httpClient: &http.Client{
-			Timeout: time.Duration(30 * time.Second),
+		httpClient: &RetryClient{
+			client: &http.Client{
+				Timeout: 10 * time.Second,
+			},
+			maxRetries: 3,
+			baseDelay:  100 * time.Millisecond,
+			maxBackoff: 1 * time.Second,
 		},
 		logLevel:                  LogLevel_Debug,
 		logger:                    newDefaultLogger(),
