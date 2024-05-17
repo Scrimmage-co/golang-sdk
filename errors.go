@@ -4,6 +4,16 @@ import "errors"
 
 var (
 	ErrInvalidURLProtocol error = errors.New("service url must start with protocol")
-	ErrStatusCodeIsNotOK  error = errors.New("returned status code is not ok")
 	ErrAccountIsNotLinked error = errors.New("selected account is not linked")
+	ErrForbidden          error = errors.New("serice token is invalid")
 )
+
+type BadRequestError struct {
+	StatusCode int      `json:"statusCode"`
+	Messages   []string `json:"message"`
+	Err        string   `json:"error"`
+}
+
+func (e *BadRequestError) Error() string {
+	return e.Err
+}
