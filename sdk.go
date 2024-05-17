@@ -51,7 +51,7 @@ func (s *ScrimmageRewarder) setConfig(
 	config := &rewarderConfig{
 		apiServerEndpoint: apiServerEndpoint,
 		privateKeys: map[string]string{
-			"default": privateKey,
+			"default": CutPrefix(privateKey, "Token "),
 		},
 		services:  []ServiceType{ServiceType_API, ServiceType_P2E, ServiceType_FED, ServiceType_NBC},
 		namespace: namespace,
