@@ -57,6 +57,7 @@ func (a *apiImpl) GetRewarderKeyDetails(ctx context.Context) error {
 
 	req.Header.Set("Authorization", "Token "+a.config.privateKeys["default"])
 	req.Header.Set("Scrimmage-Namespace", a.config.namespace)
+	req.Header.Set("Content-Type", "application/json")
 
 	if _, err := a.config.httpClient.Do(req); err != nil {
 		return err
@@ -80,6 +81,7 @@ func (a *apiImpl) GetUserToken(ctx context.Context, payload GetUserTokenRequest)
 
 	req.Header.Set("Authorization", "Token "+a.config.privateKeys["default"])
 	req.Header.Set("Scrimmage-Namespace", a.config.namespace)
+	req.Header.Set("Content-Type", "application/json")
 
 	res, err := a.config.httpClient.Do(req)
 	if err != nil {
@@ -111,6 +113,7 @@ func (a *apiImpl) CreateIntegrationReward(ctx context.Context, payload CreateInt
 
 	req.Header.Set("Authorization", "Token "+a.config.privateKeys["default"])
 	req.Header.Set("Scrimmage-Namespace", a.config.namespace)
+	req.Header.Set("Content-Type", "application/json")
 
 	res, err := a.config.httpClient.Do(req)
 	if err != nil {
