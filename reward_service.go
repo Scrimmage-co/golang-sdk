@@ -6,8 +6,8 @@ import (
 )
 
 type RewardService interface {
-	TrackRewardable(ctx context.Context, userId string, dataType BetDataType, event ...BetEvent) ([]CreateIntegrationRewardResponse, error)
-	TrackRewardableOnce(ctx context.Context, userId string, dataType BetDataType, eventID *string, event BetEvent) (CreateIntegrationRewardResponse, error)
+	TrackRewardable(ctx context.Context, userId string, dataType string, event ...interface{}) ([]CreateIntegrationRewardResponse, error)
+	TrackRewardableOnce(ctx context.Context, userId string, dataType string, eventID *string, events interface{}) (CreateIntegrationRewardResponse, error)
 }
 
 type rewardServiceImpl struct {
@@ -25,7 +25,7 @@ func newRewardService(
 	}
 }
 
-func (s *rewardServiceImpl) TrackRewardable(ctx context.Context, userId string, dataType BetDataType, events ...BetEvent) ([]CreateIntegrationRewardResponse, error) {
+func (s *rewardServiceImpl) TrackRewardable(ctx context.Context, userId string, dataType string, events ...interface{}) ([]CreateIntegrationRewardResponse, error) {
 	var (
 		mutex sync.Mutex
 		wg    sync.WaitGroup
@@ -38,15 +38,19 @@ func (s *rewardServiceImpl) TrackRewardable(ctx context.Context, userId string, 
 		go func(
 			mutex *sync.Mutex,
 			wg *sync.WaitGroup,
-			event BetEvent,
+			event interface{},
 		) {
 			defer wg.Done()
 
-			result, _ := s.api.CreateIntegrationReward(ctx, CreateIntegrationRewardRequest{
+			result, err := s.api.CreateIntegrationReward(ctx, CreateIntegrationRewardRequest{
 				UserID:   userId,
 				DataType: dataType,
 				Body:     event,
 			})
+
+			if err != nil {
+				s.config.logger.Warn("failed to call the integration reward : ", err)
+			}
 
 			mutex.Lock()
 			results = append(results, result)
@@ -63,11 +67,11 @@ func (s *rewardServiceImpl) TrackRewardable(ctx context.Context, userId string, 
 	return results, nil
 }
 
-func (s *rewardServiceImpl) TrackRewardableOnce(ctx context.Context, userId string, dataType BetDataType, eventID *string, event BetEvent) (CreateIntegrationRewardResponse, error) {
+func (s *rewardServiceImpl) TrackRewardableOnce(ctx context.Context, userId string, dataType string, eventID *string, events interface{}) (CreateIntegrationRewardResponse, error) {
 	return s.api.CreateIntegrationReward(ctx, CreateIntegrationRewardRequest{
 		UserID:   userId,
 		EventID:  eventID,
 		DataType: dataType,
-		Body:     event,
+		Body:     events,
 	})
 }
