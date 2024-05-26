@@ -1,5 +1,7 @@
 package scrimmage
 
+import "encoding/json"
+
 type BetOutcome string
 
 const (
@@ -72,14 +74,14 @@ type SingleBet struct {
 type CreateIntegrationRewardRequest struct {
 	EventID  *string     `json:"eventId,omitempty"`
 	UserID   string      `json:"userId"`
-	DataType BetDataType `json:"dataType"`
-	Body     BetEvent    `json:"body"`
+	DataType string      `json:"dataType"`
+	Body     interface{} `json:"body"`
 }
 
 type CreateIntegrationRewardResponse struct {
-	Namespace string       `json:"namespace"`
-	UserId    string       `json:"userId"`
-	DataType  *BetDataType `json:"dataType"`
-	EventID   *string      `json:"eventId"`
-	Body      *BetEvent    `json:"body"`
+	Namespace string          `json:"namespace"`
+	UserId    string          `json:"userId"`
+	DataType  *string         `json:"dataType"`
+	EventID   *string         `json:"eventId"`
+	Body      json.RawMessage `json:"body"`
 }

@@ -209,12 +209,14 @@ func Test_SDK_TrackRewardableOnceOK(t *testing.T) {
 		assert.NoError(t, err)
 
 		assert.JSONEq(t, string(rawRequestBody), string(expectedRequestBodyInJson))
+		bodyJson, err := json.Marshal(betEvent)
+		assert.NoError(t, err)
 
 		ctx.JSON(200, scrimmage.CreateIntegrationRewardResponse{
 			Namespace: namespace,
 			EventID:   scrimmage.GetPtrOf("uniqueEventId"),
-			DataType:  scrimmage.GetPtrOf[scrimmage.BetDataType](scrimmage.BetDataType_BetExecuted),
-			Body:      &betEvent,
+			DataType:  scrimmage.GetPtrOf(scrimmage.BetDataType_BetExecuted),
+			Body:      bodyJson,
 		})
 	})
 
@@ -317,11 +319,14 @@ func Test_SDK_TrackRewardableMultipleDataOK(t *testing.T) {
 		assert.NoError(t, err)
 		assert.JSONEq(t, string(rawRequestBody), string(expectedRequestBodyInJson))
 
+		bodyJson, err := json.Marshal(betEvents[0])
+		assert.NoError(t, err)
+
 		ctx.JSON(200, scrimmage.CreateIntegrationRewardResponse{
 			Namespace: namespace,
 			EventID:   scrimmage.GetPtrOf("uniqueEventId"),
-			DataType:  scrimmage.GetPtrOf[scrimmage.BetDataType](scrimmage.BetDataType_BetExecuted),
-			Body:      &betEvents[0],
+			DataType:  scrimmage.GetPtrOf(scrimmage.BetDataType_BetExecuted),
+			Body:      bodyJson,
 		})
 	})
 
@@ -342,7 +347,8 @@ func Test_SDK_TrackRewardableMultipleDataOK(t *testing.T) {
 		context.Background(),
 		"userId",
 		scrimmage.BetDataType_BetExecuted,
-		betEvents...,
+		betEvents[0],
+		betEvents[1],
 	)
 
 	assert.NoError(t, err)
